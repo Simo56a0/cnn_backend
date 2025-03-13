@@ -1,25 +1,21 @@
-from fastapi import FastAPI, File, UploadFile
+import tensorflow as tf
 import numpy as np
 import cv2
-import tensorflow as tf
+from fastapi import FastAPI, File, UploadFile
 from PIL import Image
 import io
 from collections import Counter
-import gdown
-import os
 
 app = FastAPI()
 
-# Google Drive file ID and model path
-MODEL_FILE_ID = "1_Yi_pMGwMDjklGAeEl-IsYVDpiROvYjZ"  # Replace with your file ID
+# Load the TensorFlow Lite model
 MODEL_PATH = "sign_language_model.tflite"
+interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter.allocate_tensors()
 
-# Download the model from Google Drive if it doesn't exist
-if not os.path.exists(MODEL_PATH):
-    gdown.download(f"https://drive.google.com/uc?id={MODEL_FILE_ID}", MODEL_PATH, quiet=False)
-
-# Load your CNN model
-model = tf.keras.models.load_model(MODEL_PATH)
+# Get input and output details
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 # Define the class-to-word mapping
 class_to_word = {
@@ -45,7 +41,9 @@ async def predict(file: UploadFile = File(...)):
         processed_frame = preprocess_frame(frame)
         
         # Perform inference
-        prediction = model.predict(processed_frame)
+        interpreter.set_tensor(input_details[0]['index'], processed_frame)
+        interpreter.invoke()
+        prediction = interpreter.get_tensor(output_details[0]['index'])
         predicted_class = np.argmax(prediction, axis=1)[0]
         predictions.append(predicted_class)
     
@@ -80,4 +78,5 @@ def preprocess_frame(frame):
     
     # Expand dimensions to match the model's input shape
     frame = np.expand_dims(frame, axis=0)
+    frame = frame.astype(np.float32)  # Ensure the input is float32
     return frame
