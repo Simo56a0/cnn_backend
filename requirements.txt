@@ -1,0 +1,7 @@
+gdown
+tensorflow
+numpy
+opencv-python
+pillow
+fastapi
+uvicorn
