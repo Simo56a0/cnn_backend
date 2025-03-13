@@ -5,11 +5,24 @@ from fastapi import FastAPI, File, UploadFile
 from PIL import Image
 import io
 from collections import Counter
+import os
+import gdown
 
 app = FastAPI()
 
-# Load the TensorFlow Lite model
+# Google Drive file ID and model path
+MODEL_FILE_ID = "1_Yi_pMGwMDjklGAeEl-IsYVDpiROvYjZ"  # Replace with your file ID
 MODEL_PATH = "sign_language_model.tflite"
+
+# Download the model from Google Drive if it doesn't exist
+if not os.path.exists(MODEL_PATH):
+    gdown.download(f"https://drive.google.com/uc?id={MODEL_FILE_ID}", MODEL_PATH, quiet=False)
+
+# Check if the model file exists
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
+
+# Load the TensorFlow Lite model
 interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 
