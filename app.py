@@ -24,7 +24,7 @@ if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
 
 # Load the TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+interpreter = Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 
 # Get input and output details
