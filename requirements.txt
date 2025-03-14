@@ -6,3 +6,4 @@ pillow
 fastapi
 uvicorn
 python-multipart
+ai_edge_litert
