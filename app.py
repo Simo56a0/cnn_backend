@@ -7,6 +7,7 @@ import io
 from collections import Counter
 import os
 import gdown
+from ai_edge_litert import Interpreter
 
 app = FastAPI()
 
@@ -37,6 +38,10 @@ class_to_word = {
     2: "Yes",
     3: "No"
 }
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the Sign Language Translator API!"}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
