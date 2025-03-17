@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import cv2
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from PIL import Image
 import io
 from collections import Counter
@@ -126,31 +126,38 @@ async def root():
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    # Read the video file
-    contents = await file.read()
-    video_bytes = io.BytesIO(contents)
-    
-    # Extract frames from the video
-    frames = extract_frames(video_bytes)
-    
-    # Process each frame and perform inference
-    predictions = []
-    for frame in frames:
-        # Resize and normalize the frame
-        processed_frame = preprocess_frame(frame)
+    try:
+        # Read the video file
+        contents = await file.read()
+        video_bytes = io.BytesIO(contents)
         
-        # Perform inference
-        interpreter.set_tensor(input_details[0]['index'], processed_frame)
-        interpreter.invoke()
-        prediction = interpreter.get_tensor(output_details[0]['index'])
-        predicted_class = np.argmax(prediction, axis=1)[0]
-        predictions.append(predicted_class)
+        # Extract frames from the video
+        frames = extract_frames(video_bytes)
+        
+        # Process each frame and perform inference
+        predictions = []
+        for frame in frames:
+            # Resize and normalize the frame
+            processed_frame = preprocess_frame(frame)
+            
+            # Perform inference
+            interpreter.set_tensor(input_details[0]['index'], processed_frame)
+            interpreter.invoke()
+            prediction = interpreter.get_tensor(output_details[0]['index'])
+            predicted_class = np.argmax(prediction, axis=1)[0]
+            predictions.append(predicted_class)
+        
+        # Use a voting mechanism to determine the final translation
+        if not predictions:
+            raise HTTPException(status_code=400, detail="No frames extracted from the video.")
+        
+        final_class = Counter(predictions).most_common(1)[0][0]
+        translation = class_to_word.get(final_class, "Unknown")
+        
+        return {"translation": translation}
     
-    # Use a voting mechanism to determine the final translation
-    final_class = Counter(predictions).most_common(1)[0][0]
-    translation = class_to_word.get(final_class, "Unknown")
-    
-    return {"translation": translation}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def extract_frames(video_bytes):
     # Save the video bytes to a temporary file
@@ -166,16 +173,20 @@ def extract_frames(video_bytes):
             break
         frames.append(frame)
     cap.release()
+    
+    # Clean up the temporary video file
+    os.remove("temp_video.mp4")
+    
     return frames
 
 def preprocess_frame(frame):
     # Resize the frame to match the model's input size
     frame = cv2.resize(frame, (224, 224))
     
-    # Normalize the frame
-    frame = frame / 255.0
+    # Normalize the frame to [0, 1]
+    frame = frame.astype(np.float32) / 255.0
     
     # Expand dimensions to match the model's input shape
     frame = np.expand_dims(frame, axis=0)
-    frame = frame.astype(np.float32)  # Ensure the input is float32
+    
     return frame
