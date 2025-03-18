@@ -124,8 +124,8 @@ class_to_word = {
     62: "start",
     71: "topic",
     73: "ugandan",
-    74: "users"
-    # 76: "ways"
+    74: "users",
+    76: "ways"
 }
 
 @app.get("/")
