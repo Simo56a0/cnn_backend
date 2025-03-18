@@ -7,7 +7,6 @@ from collections import Counter
 import os
 import gdown
 import logging
-from ai_edge_litert.interpreter import Interpreter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -16,8 +15,8 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # Google Drive file ID and model path
-MODEL_FILE_ID = "1_Yi_pMGwMDjklGAeEl-IsYVDpiROvYjZ"  # Replace with your file ID
-MODEL_PATH = "sign_language_model.tflite"
+MODEL_FILE_ID = "1nI--fH-H5mzGFB8rFpSkx2Ld8zhzewlS"  # Replace with your file ID
+MODEL_PATH = "sign_language_model_finetuned.keras"
 
 # Download the model from Google Drive if it doesn't exist
 if not os.path.exists(MODEL_PATH):
@@ -28,16 +27,10 @@ if not os.path.exists(MODEL_PATH):
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
 
-# Load the TensorFlow Lite model
-logger.info("Loading TensorFlow Lite model...")
-interpreter = Interpreter(model_path=MODEL_PATH)
-interpreter.allocate_tensors()
-
-# Get input and output details
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-logger.info(f"Input details: {input_details}")
-logger.info(f"Output details: {output_details}")
+# Load the Keras model
+logger.info("Loading Keras model...")
+model = tf.keras.models.load_model(MODEL_PATH)
+logger.info("Model loaded successfully!")
 
 # Define the class-to-word mapping
 class_to_word = {
@@ -153,11 +146,12 @@ async def predict(file: UploadFile = File(...)):
             processed_frame = preprocess_frame(frame)
             
             # Perform inference
-            interpreter.set_tensor(input_details[0]['index'], processed_frame)
-            interpreter.invoke()
-            prediction = interpreter.get_tensor(output_details[0]['index'])
+            prediction = model.predict(processed_frame)
             predicted_class = np.argmax(prediction, axis=1)[0]
             predictions.append(predicted_class)
+
+        # Log the predicted classes
+        logger.info(f"Predicted classes: {predictions}")
 
         # Use a voting mechanism to determine the final translation
         if not predictions:
