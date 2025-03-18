@@ -2,12 +2,16 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from PIL import Image
 import io
 from collections import Counter
 import os
 import gdown
+import logging
 from ai_edge_litert.interpreter import Interpreter
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -17,6 +21,7 @@ MODEL_PATH = "sign_language_model.tflite"
 
 # Download the model from Google Drive if it doesn't exist
 if not os.path.exists(MODEL_PATH):
+    logger.info("Downloading model from Google Drive...")
     gdown.download(f"https://drive.google.com/uc?id={MODEL_FILE_ID}", MODEL_PATH, quiet=False)
 
 # Check if the model file exists
@@ -24,12 +29,15 @@ if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
 
 # Load the TensorFlow Lite model
+logger.info("Loading TensorFlow Lite model...")
 interpreter = Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 
 # Get input and output details
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
+logger.info(f"Input details: {input_details}")
+logger.info(f"Output details: {output_details}")
 
 # Define the class-to-word mapping
 class_to_word = {
@@ -127,13 +135,17 @@ async def root():
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
+        # Log the received file
+        logger.info(f"Received file: {file.filename}")
+
         # Read the video file
         contents = await file.read()
         video_bytes = io.BytesIO(contents)
-        
+
         # Extract frames from the video
         frames = extract_frames(video_bytes)
-        
+        logger.info(f"Extracted {len(frames)} frames from the video.")
+
         # Process each frame and perform inference
         predictions = []
         for frame in frames:
@@ -146,17 +158,19 @@ async def predict(file: UploadFile = File(...)):
             prediction = interpreter.get_tensor(output_details[0]['index'])
             predicted_class = np.argmax(prediction, axis=1)[0]
             predictions.append(predicted_class)
-        
+
         # Use a voting mechanism to determine the final translation
         if not predictions:
             raise HTTPException(status_code=400, detail="No frames extracted from the video.")
         
         final_class = Counter(predictions).most_common(1)[0][0]
         translation = class_to_word.get(final_class, "Unknown")
-        
+        logger.info(f"Final translation: {translation}")
+
         return {"translation": translation}
     
     except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 def extract_frames(video_bytes):
