@@ -123,7 +123,8 @@ class_to_word = {
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Sign Language Translator API!"}
+    # return {"message": "Welcome to the Sign Language Translator API!"}
+    return {"message": "Dockerized FastAPI on Crane Cloud!"}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
