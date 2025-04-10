@@ -26,4 +26,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: simo56a0/signlangapp:latest
+        platforms: linux/amd64
+        tags: simo56a0/signlang-app:latest
