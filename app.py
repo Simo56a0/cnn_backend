@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import cv2
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from flask import Flask, request, jsonify
 import io
 from collections import Counter
 import os
@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = Flask(__name__)
 
 # Google Drive file ID and model path
 MODEL_FILE_ID = "1nI--fH-H5mzGFB8rFpSkx2Ld8zhzewlS"  # Replace with your file ID
@@ -121,57 +121,10 @@ class_to_word = {
     76: "ways"
 }
 
-@app.get("/")
-async def root():
-    # return {"message": "Welcome to the Sign Language Translator API!"}
-    return {"message": "Dockerized FastAPI on Crane Cloud!"}
-
-@app.post("/predict")
-async def predict(file: UploadFile = File(...)):
-    try:
-        # Log the received file
-        logger.info(f"Received file: {file.filename}")
-
-        # Read the video file
-        contents = await file.read()
-        video_bytes = io.BytesIO(contents)
-
-        # Extract frames from the video
-        frames = extract_frames(video_bytes)
-        logger.info(f"Extracted {len(frames)} frames from the video.")
-
-        # Process each frame and perform inference
-        predictions = []
-        for frame in frames:
-            # Resize and normalize the frame
-            processed_frame = preprocess_frame(frame)
-            
-            # Perform inference
-            prediction = model.predict(processed_frame)
-            predicted_class = np.argmax(prediction, axis=1)[0]
-            predictions.append(predicted_class)
-
-        # Log the predicted classes
-        logger.info(f"Predicted classes: {predictions}")
-
-        # Use a voting mechanism to determine the final translation
-        if not predictions:
-            raise HTTPException(status_code=400, detail="No frames extracted from the video.")
-        
-        final_class = Counter(predictions).most_common(1)[0][0]
-        translation = class_to_word.get(final_class, "Unknown")
-        logger.info(f"Final translation: {translation}")
-
-        return {"translation": translation}
-    
-    except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 def extract_frames(video_bytes):
     # Save the video bytes to a temporary file
     with open("temp_video.mp4", "wb") as f:
-        f.write(video_bytes.getbuffer())
+        f.write(video_bytes)
     
     # Open the video file and extract frames
     cap = cv2.VideoCapture("temp_video.mp4")
@@ -199,3 +152,61 @@ def preprocess_frame(frame):
     frame = np.expand_dims(frame, axis=0)
     
     return frame
+
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({"message": "Dockerized Flask API on Crane Cloud!"})
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        # Check if the post request has the file part
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part in the request"}), 400
+        
+        file = request.files['file']
+        
+        # If the user does not select a file, the browser submits an empty file
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Log the received file
+        logger.info(f"Received file: {file.filename}")
+
+        # Read the video file
+        contents = file.read()
+        
+        # Extract frames from the video
+        frames = extract_frames(contents)
+        logger.info(f"Extracted {len(frames)} frames from the video.")
+
+        # Process each frame and perform inference
+        predictions = []
+        for frame in frames:
+            # Resize and normalize the frame
+            processed_frame = preprocess_frame(frame)
+            
+            # Perform inference
+            prediction = model.predict(processed_frame)
+            predicted_class = np.argmax(prediction, axis=1)[0]
+            predictions.append(predicted_class)
+
+        # Log the predicted classes
+        logger.info(f"Predicted classes: {predictions}")
+
+        # Use a voting mechanism to determine the final translation
+        if not predictions:
+            return jsonify({"error": "No frames extracted from the video."}), 400
+        
+        final_class = Counter(predictions).most_common(1)[0][0]
+        translation = class_to_word.get(final_class, "Unknown")
+        logger.info(f"Final translation: {translation}")
+
+        return jsonify({"translation": translation})
+    
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=8000)
