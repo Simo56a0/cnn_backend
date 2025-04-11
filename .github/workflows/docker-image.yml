@@ -27,4 +27,4 @@ jobs:
         context: .
         push: true
         platforms: linux/amd64
-        tags: simo56a0/signlang-app:latest
+        tags: simo56a0/signlang-app:flask-latest
