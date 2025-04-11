@@ -3,7 +3,8 @@ tensorflow
 numpy
 opencv-python
 pillow
-fastapi
-uvicorn
+werkzeug
+gunicorn
 python-multipart
 ai-edge-litert
+flask
