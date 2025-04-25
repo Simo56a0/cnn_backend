@@ -17,7 +17,7 @@ app = FastAPI()
 model = None
 
 
-
+MODEL_PATH = "models/finetuned_cnn_model.keras"
 # Download the model from Google Drive if it doesn't exist
 
 # Check if the model file exists
