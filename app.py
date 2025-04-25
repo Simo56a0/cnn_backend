@@ -166,15 +166,15 @@ def find_model_path():
     else:
         logger.warning(f"Models directory not found at {models_dir}")
     
-    # Check all possible paths
-    for path in MODEL_PATHS:
-        if os.path.exists(path):
-            logger.info(f"Model found at: {path}")
-            return path
+    # # Check all possible paths
+    # for path in MODEL_PATHS:
+    #     if os.path.exists(path):
+    #         logger.info(f"Model found at: {path}")
+    #         return path
     
-    # If we get here, no model path was found
-    logger.error("Model file not found in any of the expected locations")
-    return None
+    # # If we get here, no model path was found
+    # logger.error("Model file not found in any of the expected locations")
+    # return None
 
 @app.on_event("startup")
 def load_cnn_model():
@@ -182,7 +182,7 @@ def load_cnn_model():
     global model
     try:
         # Find the model path
-        model_path = find_model_path()
+        model_path = "models/sign_language_model_finetuned (1).keras"
         
         if not model_path:
             logger.error("Model file not found. The API will run but predictions will fail.")
