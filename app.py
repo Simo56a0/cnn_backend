@@ -7,12 +7,14 @@ from collections import Counter
 import os
 import gdown
 import logging
+from tensorflow.keras.models import load_model
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+model = None
 
 # Google Drive file ID and model path
 MODEL_FILE_ID = "1nI--fH-H5mzGFB8rFpSkx2Ld8zhzewlS"  # Replace with your file ID
@@ -152,6 +154,11 @@ def preprocess_frame(frame):
     frame = np.expand_dims(frame, axis=0)
     
     return frame
+
+@app.on_event("startup")
+def load_cnn_model():
+    global model
+    model = load_model("models/finetuned_cnn_model.keras")
 
 @app.route('/', methods=['GET'])
 def root():
