@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-model_path = "models/finetuned_cnn_model.keras"
+model_path = "models/sign_language_model_finetuned (1).keras"
 model = load_model(model_path)
 
 
