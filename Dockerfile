@@ -6,6 +6,8 @@ WORKDIR /app
 
 
 COPY requirements.txt .
+COPY models/ ./models/
+
 # Copy code
 
 
