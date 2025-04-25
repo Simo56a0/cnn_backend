@@ -4,7 +4,7 @@ numpy
 opencv-python
 pillow
 werkzeug
-gunicorn
 python-multipart
 ai-edge-litert
-flask
+fastapi
+uvicorn
