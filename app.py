@@ -13,15 +13,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-model = None
+model_path = "models/finetuned_cnn_model.keras"
+model = load_model(model_path)
 
-# Define possible model paths to check
-MODEL_PATHS = [
-    "models/finetuned_cnn_model.keras",
-    "./models/finetuned_cnn_model.keras",
-    "/app/models/finetuned_cnn_model.keras",  # Common path in containerized environments
-    os.path.join(os.getcwd(), "models/finetuned_cnn_model.keras")
-]
 
 # Define the class-to-word mapping
 class_to_word = {
