@@ -16,23 +16,18 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 model = None
 
-# Google Drive file ID and model path
-MODEL_FILE_ID = "1nI--fH-H5mzGFB8rFpSkx2Ld8zhzewlS"  # Replace with your file ID
-MODEL_PATH = "sign_language_model_finetuned.keras"
+
 
 # Download the model from Google Drive if it doesn't exist
-if not os.path.exists(MODEL_PATH):
-    logger.info("Downloading model from Google Drive...")
-    gdown.download(f"https://drive.google.com/uc?id={MODEL_FILE_ID}", MODEL_PATH, quiet=False)
 
 # Check if the model file exists
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
+# if not os.path.exists(MODEL_PATH):
+#     raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
 
-# Load the Keras model
-logger.info("Loading Keras model...")
-model = tf.keras.models.load_model(MODEL_PATH)
-logger.info("Model loaded successfully!")
+# # Load the Keras model
+# logger.info("Loading Keras model...")
+# model = tf.keras.models.load_model(MODEL_PATH)
+# logger.info("Model loaded successfully!")
 
 # Define the class-to-word mapping
 class_to_word = {
